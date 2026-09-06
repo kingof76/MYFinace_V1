@@ -313,6 +313,8 @@
         .custom-alert-btn { padding: 8px 16px; font-size: 0.82rem; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; }
         .custom-alert-btn.primary { background: var(--accent-color); color: #fff; }
     </style>
+    <script src="plugins/capacitor-filesystem.js"></script>
+    <script src="plugins/capacitor-share.js"></script>
 </head>
 <body>
 
@@ -1073,13 +1075,46 @@
             });
         }
 
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({records, accounts, trashRecords, availableYears}));
-            const downloadAnchor = document.createElement('a'); 
-            downloadAnchor.href = dataStr; 
-            downloadAnchor.download = `dividend_backup_${new Date().toISOString().substring(0,10)}.json`;
-            document.body.appendChild(downloadAnchor); 
-            downloadAnchor.click(); 
+        async function exportData() {
+            const dataObj = {records, accounts, trashRecords, availableYears};
+            const jsonStr = JSON.stringify(dataObj);
+            const fileName = `dividend_backup_${new Date().toISOString().substring(0,10)}.json`;
+
+            const isNative = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
+
+            if (isNative) {
+                try {
+                    const Filesystem = window.Capacitor.Plugins.Filesystem;
+                    const Share = window.Capacitor.Plugins.Share;
+                    const DirectoryEnum = (window.capacitorFilesystem && window.capacitorFilesystem.Directory) || { Cache: 'CACHE' };
+                    const EncodingEnum = (window.capacitorFilesystem && window.capacitorFilesystem.Encoding) || { UTF8: 'utf8' };
+
+                    const result = await Filesystem.writeFile({
+                        path: fileName,
+                        data: jsonStr,
+                        directory: DirectoryEnum.Cache,
+                        encoding: EncodingEnum.UTF8
+                    });
+
+                    await Share.share({
+                        title: '배당금 백업 파일',
+                        text: '배당금 캘린더 백업 파일입니다.',
+                        url: result.uri,
+                        dialogTitle: '백업 파일 저장 또는 공유'
+                    });
+                } catch (err) {
+                    showAlert('백업 파일 생성 중 오류가 발생했습니다.\n' + (err && err.message ? err.message : err));
+                }
+                return;
+            }
+
+            // 웹 브라우저 환경 (기존 방식 그대로 유지)
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonStr);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = dataStr;
+            downloadAnchor.download = fileName;
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
             downloadAnchor.remove();
         }
 
