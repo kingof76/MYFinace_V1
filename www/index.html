@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배당금 캘린더 V_0.97</title>
+    <style>
+        :root {
+            --bg-body: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --card-radius: 18px;
+            --card-shadow: 0 8px 24px rgba(149, 157, 165, 0.15);
+            --card-border: 1px solid rgba(255, 255, 255, 0.6);
+            
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --accent-color: #2563eb;
+            --border-light: #e2e8f0;
+            
+            --primary-bg: linear-gradient(135deg, #2563eb, #1d4ed8);
+            --primary-text: #ffffff;
+            --primary-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            
+            --input-bg: #ffffff;
+            --input-border: 1px solid #cbd5e1;
+            
+            --btn-action-bg: #f1f5f9;
+            --btn-action-text: #334155;
+            --btn-action-border: 1px solid #cbd5e1;
+            
+            --cell-bg: #ffffff;
+            --cell-border: 1px solid #e2e8f0;
+            --cell-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            
+            --modal-bg: #ffffff;
+            
+            --acc-1: #eff6ff; --acc-2: #f0fdf4; --acc-3: #faf5ff; 
+            --acc-4: #fefce8; --acc-5: #fff7ed; --acc-6: #f0fdfa;
+        }
+
+        /* 그레이 테마 추가 */
+        [data-theme="gray"] {
+            --accent-color: #64748b !important;
+            --primary-bg: linear-gradient(135deg, #94a3b8, #64748b) !important;
+            --primary-text: #ffffff !important;
+            --primary-shadow: 0 4px 12px rgba(100, 116, 139, 0.25) !important;
+        }
+        [data-theme="gray"] .month-group-header {
+            color: #475569 !important;
+            background-color: var(--border-light) !important;
+        }
+        [data-theme="gray"] div[style*="color: var(--accent-color)"],
+        [data-theme="gray"] span[style*="color: var(--accent-color)"],
+        [data-theme="gray"] span[style*="color:var(--accent-color)"] {
+            color: #64748b !important;
+        }
+        [data-theme="gray"] .section-title::before {
+            background-color: #64748b !important;
+        }
+
+        [data-theme="ios"] {
+            --bg-body: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
+            --bg-card: rgba(255, 255, 255, 0.6);
+            --card-border: 1px solid rgba(255, 255, 255, 0.8);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --text-main: #0f172a;
+            --text-sub: #334155;
+            --accent-color: #0284c7;
+            --primary-bg: linear-gradient(135deg, #007aff, #0051a8);
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --btn-action-bg: rgba(255, 255, 255, 0.7);
+            --cell-bg: rgba(255, 255, 255, 0.6);
+            --modal-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        [data-theme="oneui"] {
+            --bg-body: #f1f3f6;
+            --bg-card: #ffffff;
+            --card-border: 1px solid #e1e5eb;
+            --card-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+            --text-main: #0a0a0c;
+            --text-sub: #5f6368;
+            --accent-color: #0d6efd;
+            --primary-bg: #0d6efd;
+            --input-bg: #f5f7fa;
+            --btn-action-bg: #eaf0f8;
+            --cell-bg: #f8fafc;
+            --modal-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        body { 
+            background: var(--bg-body);
+            background-attachment: fixed;
+            color: var(--text-main); 
+            padding: 12px; 
+            max-width: 480px; 
+            margin: 0 auto; 
+            padding-bottom: 40px; 
+            min-height: 100vh;
+        }
+        body.modal-open { overflow: hidden; }
+        
+        .card { 
+            background: var(--bg-card); 
+            border-radius: var(--card-radius); 
+            padding: 18px; 
+            margin-bottom: 14px; 
+            box-shadow: var(--card-shadow); 
+            border: var(--card-border);
+        }
+        
+        .summary-header-grid { 
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px; 
+        }
+
+        .year-select-trigger {
+            height: 36px;
+            background: var(--btn-action-bg);
+            border: var(--btn-action-border);
+            border-radius: 12px;
+            padding: 0 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .summary-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 36px;
+            background: var(--primary-bg);
+            color: var(--primary-text);
+            padding: 0 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--primary-shadow);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 12px;
+            background-color: var(--accent-color);
+            border-radius: 2px;
+        }
+
+        .account-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+        .account-box {
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: var(--cell-shadow);
+            border: var(--cell-border);
+            background-color: var(--cell-bg);
+        }
+        .account-box:hover { filter: brightness(0.97); }
+        
+        .bg-color-0 { background-color: var(--acc-1); }
+        .bg-color-1 { background-color: var(--acc-2); }
+        .bg-color-2 { background-color: var(--acc-3); }
+        .bg-color-3 { background-color: var(--acc-4); }
+        .bg-color-4 { background-color: var(--acc-5); }
+        .bg-color-5 { background-color: var(--acc-6); }
+
+        .account-name { font-size: 0.75rem; color: var(--text-sub); font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+        .account-val { font-size: 0.8rem; font-weight: 900; color: var(--text-main); }
+
+        .slim-input, select, input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 6px 12px;
+            border: var(--input-border);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            height: 40px;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        .flex-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+        
+        button.save-btn-mini {
+            padding: 0 16px;
+            height: 40px;
+            background: var(--primary-bg);
+            color: var(--primary-text);
+            border: none;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--primary-shadow);
+            white-space: nowrap;
+        }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+        .calendar-cell { 
+            border-radius: 12px; 
+            padding: 10px 12px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer; 
+            box-shadow: var(--cell-shadow);
+            border: var(--cell-border);
+            background: var(--cell-bg);
+            min-height: 44px;
+        }
+        .calendar-cell:hover { filter: brightness(0.97); }
+        .calendar-cell.empty { filter: grayscale(0.5); opacity: 0.6; }
+        
+        .calendar-cell-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .month-label-group { display: flex; align-items: center; gap: 4px; }
+        .month-icon { font-size: 0.5rem; }
+        .month-label { font-size: 0.75rem; color: var(--text-sub); font-weight: 800; }
+        .month-amount { font-size: 0.75rem; font-weight: 900; color: var(--text-main); white-space: nowrap; }
+
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.5); 
+            justify-content: center; align-items: center; padding: 16px; z-index: 9999; 
+        }
+        .modal-content { 
+            background: var(--modal-bg); 
+            width: 100%; max-width: 400px; border-radius: 16px; 
+            display: flex; flex-direction: column; max-height: 85vh; overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+        .modal-body-scroll { padding: 16px 20px; overflow-y: auto; flex-grow: 1; }
+        
+        .close-btn { background: var(--btn-action-bg); color: var(--text-main); width: 28px; height: 28px; border-radius: 50%; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        
+        .month-group-header {
+            font-size: 0.8rem; font-weight: 800; color: var(--accent-color);
+            padding: 8px 8px 6px 8px; margin-top: 12px; border-radius: 8px; background: #f8fafc; border: 1px solid var(--border-light);
+        }
+        .detail-item { 
+            display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; 
+            border-bottom: 1px solid var(--border-light); font-size: 0.85rem; 
+            border-radius: 10px; margin-top: 6px; background: rgba(0,0,0,0.02);
+        }
+        .detail-item-content { display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+        .detail-item-main { display: flex; flex-direction: column; width: 100%; gap: 4px; }
+        .edit-row { display: flex; gap: 4px; margin-top: 6px; }
+
+        .btn-header-action { 
+            padding: 6px 12px; font-size: 0.75rem; font-weight: 700; 
+            background: var(--primary-bg); color: var(--primary-text); 
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: var(--primary-shadow);
+        }
+
+        .settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .theme-btn {
+            padding: 12px 4px; border-radius: 12px; text-align: center;
+            font-size: 0.75rem; font-weight: bold; cursor: pointer;
+            background: var(--btn-action-bg); border: 2px solid transparent; color: var(--text-main);
+        }
+        .theme-btn.active { border-color: var(--accent-color); background: rgba(2, 132, 199, 0.1); }
+
+        .setting-action-btn {
+            width: 100%; padding: 12px; border-radius: 12px; text-align: left;
+            font-size: 0.8rem; font-weight: bold; cursor: pointer;
+            background: var(--btn-action-bg); border: var(--btn-action-border); color: var(--text-main);
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 6px;
+        }
+        .setting-action-btn.danger { color: #ef4444; background: #fef2f2; }
+
+        .trash-badge { background: #ef4444; color: #fff; border-radius: 50%; padding: 2px 6px; font-size: 0.6rem; display: none; }
+        .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        
+        .autocomplete-wrapper { position: relative; width: 100%; }
+        .autocomplete-list { 
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0; 
+            background: var(--modal-bg); border: var(--input-border); 
+            border-radius: 12px; max-height: 160px; overflow-y: auto; 
+            z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        }
+        .autocomplete-item { padding: 10px 14px; font-size: 0.8rem; cursor: pointer; border-bottom: 1px solid var(--border-light); font-weight: 600; }
+        .autocomplete-item:hover { background-color: rgba(2, 132, 199, 0.1); color: var(--accent-color); }
+        
+        .delete-btn { width: 20px; height: 20px; background: #fef2f2; color: #ef4444; border: none; border-radius: 50%; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .edit-btn { width: 20px; height: 20px; background: #e0f2fe; color: var(--accent-color); border: none; border-radius: 50%; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        
+        #customAlertModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 10000; padding: 16px; }
+        #customAlertContent { background: var(--modal-bg); width: 100%; max-width: 300px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .custom-alert-btn { padding: 8px 16px; font-size: 0.82rem; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; }
+        .custom-alert-btn.primary { background: var(--accent-color); color: #fff; }
+    </style>
+</head>
+<body>
+
+    <!-- 섹션 1: 상단 헤더 및 계좌 요약 -->
+    <div class="card">
+        <div class="summary-header-grid">
+            <select id="yearSelect" class="year-select-trigger" onchange="changeYear(this.value)"></select>
+            <div class="summary-badge" id="totalReceived" onclick="openAccountModal('전체')">0</div>
+        </div>
+        
+        <div style="border-top: 1px solid var(--border-light); padding-top: 10px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="section-title">계좌별 수령 누적액</h3>
+            <button class="btn-header-action" onclick="openSettingsModal()">🛠️ 설정 <span id="headerTrashBadge" class="trash-badge">0</span></button>
+        </div>
+        
+        <div class="account-grid" id="accountBoxesContainer"></div>
+    </div>
+
+    <!-- 섹션 2: 배당금 입력 폼 -->
+    <div class="card">
+        <div class="section-header-row">
+            <h3 class="section-title">배당금 내역 추가</h3>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+            <select id="accountSelect" onchange="onAccountChange()"></select>
+        </div>
+
+        <div style="margin-bottom: 8px;" class="autocomplete-wrapper">
+            <input type="text" id="stockInput" class="slim-input" placeholder="종목명을 입력하세요 (예: SCHD)" autocomplete="off" oninput="filterStockAutocomplete()" onclick="showStockAutocomplete()">
+            <div id="stockAutocompleteList" class="autocomplete-list"></div>
+        </div>
+
+        <div class="flex-row">
+            <input type="date" id="receiveDate" class="slim-input" style="flex: 1.2;">
+            <input type="number" id="receiveAmount" class="slim-input" placeholder="세후 수령액" style="flex: 1;">
+            <button class="save-btn-mini" onclick="addRecord()">저장</button>
+        </div>
+    </div>
+
+    <!-- 섹션 3: 캘린더 -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <h3 class="section-title"><span id="calendarYearLabel">2026</span>년 월별 배당 캘린더</h3>
+        </div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-color); margin-bottom: 8px;" id="monthlyAvgDisplay">월평균: 0 원</div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <!-- 워터마크 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 0.7rem; color: var(--text-sub); margin-top: -4px; margin-bottom: 12px; font-weight: 600;">
+        <span>V_0.97 Clean Edition</span>
+        <span>Design by Kingof76</span>
+    </div>
+
+    <!-- 🛠️ 설정 모달 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 0.95rem; font-weight: 800;">🛠️ 설정</h3>
+                <button class="close-btn" onclick="closeModalWindow('settingsModal')">✕</button>
+            </div>
+            <div class="modal-body-scroll">
+                <!-- 1. 연도 관리 -->
+                <div class="section-title" style="margin-bottom: 10px;">📅 연도 관리</div>
+                <div style="margin-bottom: 16px;">
+                    <button class="setting-action-btn" onclick="openYearManageModal()">
+                        <span>연도 추가 및 삭제 관리</span>
+                        <span>➡️</span>
+                    </button>
+                </div>
+
+                <!-- 2. 계좌 관리 -->
+                <div class="section-title" style="margin-bottom: 10px;">⚙️ 계좌 관리</div>
+                <div style="margin-bottom: 16px;">
+                    <button class="setting-action-btn" onclick="openAccountManageModal()">
+                        <span>계좌 추가 및 삭제 관리</span>
+                        <span>➡️</span>
+                    </button>
+                </div>
+
+                <!-- 3. 데이터 관리 -->
+                <div class="section-title" style="margin-bottom: 10px;">💾 데이터 관리</div>
+                <div style="margin-bottom: 16px;">
+                    <button class="setting-action-btn" onclick="openTrashModalFromSettings()">
+                        <span>🗑️ 휴지통</span>
+                        <span id="settingsTrashBadgeCount" class="trash-badge">0</span>
+                    </button>
+                    <button class="setting-action-btn" onclick="exportData()">⬇️ 백업 (파일 다운로드)</button>
+                    <button class="setting-action-btn" onclick="document.getElementById('importFile').click()">⬆️ 복구 (파일 불러오기)</button>
+                    <button class="setting-action-btn danger" onclick="resetAllData()">⚠️ 모든 데이터 초기화</button>
+                    <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+                </div>
+
+                <!-- 4. 테마 설정 -->
+                <div class="section-title" style="margin-bottom: 10px;">🎨 테마 설정</div>
+                <div class="settings-grid">
+                    <div class="theme-btn" id="theme-default" onclick="setTheme('default')">✨ 기본</div>
+                    <div class="theme-btn" id="theme-gray" onclick="setTheme('gray')">🩶 그레이</div>
+                    <div class="theme-btn" id="theme-ios" onclick="setTheme('ios')">🍎 iOS</div>
+                    <div class="theme-btn" id="theme-oneui" onclick="setTheme('oneui')">📱 One UI</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 연도 관리 모달 -->
+    <div class="modal" id="yearManageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 0.95rem; font-weight: 800;">연도 관리</h3>
+                <button class="close-btn" onclick="closeModalWindow('yearManageModal')">✕</button>
+            </div>
+            <div class="modal-body-scroll">
+                <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                    <input type="number" id="newYearInput" class="slim-input" placeholder="추가할 연도 입력 (예: 2026)">
+                    <button class="save-btn-mini" onclick="addNewYearAction()">추가</button>
+                </div>
+                <div id="yearManageList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 계좌 관리 모달 -->
+    <div class="modal" id="accountManageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 0.95rem; font-weight: 800;">계좌 관리</h3>
+                <button class="close-btn" onclick="closeModalWindow('accountManageModal')">✕</button>
+            </div>
+            <div class="modal-body-scroll">
+                <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                    <input type="text" id="newAccountInput" class="slim-input" placeholder="계좌명 입력">
+                    <button class="save-btn-mini" onclick="addNewAccount()">추가</button>
+                </div>
+                <div id="accountManageList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상세 내역 모달 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle" style="font-size: 0.95rem; font-weight: 800;">상세 내역</h3>
+                <!-- 수정 요청 반영: closeModalWindow 내에서 상세 모달 닫을 때 수정 상태(editingRecordId)도 함께 초기화 -->
+                <button class="close-btn" onclick="closeModalWindow('detailModal')">✕</button>
+            </div>
+            <div class="modal-body-scroll" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- 휴지통 모달 -->
+    <div class="modal" id="trashModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 0.95rem; font-weight: 800;">🗑️ 휴지통</h3>
+                <button class="close-btn" onclick="closeModalWindow('trashModal')">✕</button>
+            </div>
+            <div class="modal-body-scroll" id="trashModalBody"></div>
+        </div>
+    </div>
+
+    <!-- 알럿/컨펌 모달 -->
+    <div id="customAlertModal">
+        <div id="customAlertContent">
+            <div id="customAlertMsg" style="font-size: 0.9rem; margin-bottom: 16px; white-space: pre-line; color: var(--text-main);"></div>
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="custom-alert-btn primary" onclick="closeCustomAlert(true)">확인</button>
+                <button class="custom-alert-btn" id="customAlertCancelBtn" style="background: var(--btn-action-bg); color: var(--text-main);" onclick="closeCustomAlert(false)">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function initTheme() {
+            const savedTheme = localStorage.getItem('dividend_theme_v095') || 'default';
+            setTheme(savedTheme);
+        }
+
+        function setTheme(themeName) {
+            if(themeName === 'default') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', themeName);
+            }
+            localStorage.setItem('dividend_theme_v095', themeName);
+            
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`theme-${themeName}`);
+            if(activeBtn) activeBtn.classList.add('active');
+        }
+
+        function openSettingsModal() {
+            updateTrashBadge();
+            openModalWindow('settingsModal');
+        }
+
+        function openTrashModalFromSettings() {
+            closeModalWindow('settingsModal');
+            openTrashModal();
+        }
+
+        function openModalWindow(modalId) {
+            document.body.classList.add('modal-open');
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModalWindow(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            
+            // 상세 내역 모달(detailModal)이 닫힐 때 금액(내역) 수정 상태도 함께 초기화하도록 처리
+            if (modalId === 'detailModal') {
+                editingRecordId = null;
+            }
+
+            if (document.querySelectorAll('.modal[style*="display: flex"]').length === 0) {
+                document.body.classList.remove('modal-open');
+            }
+        }
+
+        let alertCallback = null;
+        function showAlert(msg, cb) { showDialog(msg, false, cb); }
+        function showConfirm(msg, cb) { showDialog(msg, true, cb); }
+        function showDialog(msg, isConfirm, cb) {
+            document.getElementById('customAlertMsg').innerText = msg;
+            document.getElementById('customAlertCancelBtn').style.display = isConfirm ? 'inline-block' : 'none';
+            document.getElementById('customAlertModal').style.display = 'flex';
+            alertCallback = cb;
+        }
+        function closeCustomAlert(res) {
+            document.getElementById('customAlertModal').style.display = 'none';
+            if(alertCallback) alertCallback(res);
+        }
+
+        const monthIcons = { 1:'🌱', 2:'🌿', 3:'🌸', 4:'🌷', 5:'🍀', 6:'☀️', 7:'🍉', 8:'🌻', 9:'🍁', 10:'🍂', 11:'❄️', 12:'⛄' };
+        let records = [], accounts = [], trashRecords = [], availableYears = [];
+        let currentYear = new Date().getFullYear().toString();
+        let editingRecordId = null;
+        let editingAccountName = null;
+
+        window.onload = function() {
+            initTheme();
+            loadFromLocalStorage();
+            if (availableYears.length === 0) availableYears.push(currentYear);
+            else if (!availableYears.includes(currentYear)) currentYear = availableYears[0];
+            
+            document.getElementById('receiveDate').value = new Date().toISOString().substring(0, 10);
+            updateUI();
+            
+            document.addEventListener('click', e => {
+                if (!e.target.closest('.autocomplete-wrapper')) {
+                    document.getElementById('stockAutocompleteList').style.display = 'none';
+                }
+            });
+        };
+
+        function loadFromLocalStorage() {
+            const accs = localStorage.getItem('dividend_accounts_v081');
+            if(accs) { 
+                try{ 
+                    const parsed = JSON.parse(accs);
+                    accounts = parsed.map(item => typeof item === 'string' ? { name: item } : item);
+                }catch(e){ accounts=[]; } 
+            }
+            const recs = localStorage.getItem('dividend_records_v081');
+            if(recs) { try{ records = JSON.parse(recs); }catch(e){ records=[]; } }
+            const trsh = localStorage.getItem('dividend_trash_records_v081');
+            if(trsh) { try{ trashRecords = JSON.parse(trsh); }catch(e){ trashRecords=[]; } }
+            const yrs = localStorage.getItem('dividend_years_v081');
+            if(yrs) { try{ availableYears = JSON.parse(yrs); }catch(e){ availableYears=[]; } }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('dividend_records_v081', JSON.stringify(records));
+            localStorage.setItem('dividend_accounts_v081', JSON.stringify(accounts));
+            localStorage.setItem('dividend_trash_records_v081', JSON.stringify(trashRecords));
+            localStorage.setItem('dividend_years_v081', JSON.stringify(availableYears));
+            updateTrashBadge();
+        }
+
+        function updateTrashBadge() {
+            const count = trashRecords.length;
+            const hBadge = document.getElementById('headerTrashBadge');
+            const sBadge = document.getElementById('settingsTrashBadgeCount');
+            
+            if (count > 0) {
+                hBadge.style.display = 'inline-block'; hBadge.innerText = count;
+                sBadge.style.display = 'inline-block'; sBadge.innerText = count;
+            } else {
+                hBadge.style.display = 'none';
+                sBadge.style.display = 'none';
+            }
+        }
+
+        function onAccountChange() {
+            document.getElementById('stockInput').value = '';
+            showStockAutocomplete();
+        }
+
+        function getStocksByAccount(accountName) {
+            if (!accountName) return [];
+            const filtered = records.filter(r => r.account === accountName);
+            const stocks = filtered.map(r => r.stock);
+            return [...new Set(stocks)].sort();
+        }
+
+        function showStockAutocomplete() {
+            const currentAccount = document.getElementById('accountSelect').value;
+            const stocks = getStocksByAccount(currentAccount);
+            renderAutocompleteList(stocks);
+        }
+
+        function filterStockAutocomplete() {
+            const currentAccount = document.getElementById('accountSelect').value;
+            const query = document.getElementById('stockInput').value.trim().toUpperCase();
+            const stocks = getStocksByAccount(currentAccount);
+            const filtered = stocks.filter(s => s.toUpperCase().includes(query));
+            renderAutocompleteList(filtered);
+        }
+
+        function renderAutocompleteList(list) {
+            const container = document.getElementById('stockAutocompleteList');
+            if (!list || list.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.innerHTML = list.map(item => `
+                <div class="autocomplete-item" onclick="selectStockAutocomplete('${item}')">${item}</div>
+            `).join('');
+            container.style.display = 'block';
+        }
+
+        function selectStockAutocomplete(val) {
+            document.getElementById('stockInput').value = val;
+            document.getElementById('stockAutocompleteList').style.display = 'none';
+        }
+
+        function updateUI() {
+            availableYears.sort();
+            document.getElementById('yearSelect').innerHTML = availableYears.map(y => `<option value="${y}" ${y===currentYear?'selected':''}>${y}년</option>`).join('');
+            document.getElementById('calendarYearLabel').innerText = currentYear;
+
+            const selAcc = document.getElementById('accountSelect');
+            const pVal = selAcc.value;
+            selAcc.innerHTML = accounts.length ? accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('') : '<option value="">계좌 추가 필요</option>';
+            if(pVal && accounts.some(a=>a.name===pVal)) selAcc.value = pVal;
+
+            let gTotal = 0; 
+            const accT = {}, mT = {};
+            accounts.forEach(a => accT[a.name] = 0);
+            for(let i=1; i<=12; i++) mT[`${currentYear}-${String(i).padStart(2,'0')}`] = 0;
+
+            records.forEach(r => {
+                if(r.date && r.date.substring(0,4) === currentYear) {
+                    gTotal += r.amount;
+                    if(accT[r.account] !== undefined) accT[r.account] += r.amount;
+                    if(mT[r.month] !== undefined) mT[r.month] += r.amount;
+                }
+            });
+
+            document.getElementById('totalReceived').innerText = gTotal.toLocaleString() + '원';
+            const monthlyAvg = Math.round(gTotal / 12);
+            document.getElementById('monthlyAvgDisplay').innerText = `월평균: ${monthlyAvg.toLocaleString()} 원`;
+
+            const abox = document.getElementById('accountBoxesContainer');
+            if(!accounts.length) {
+                abox.innerHTML = `<div style="grid-column: span 2; text-align:center; padding:12px; font-size:0.8rem; color:var(--text-sub);">등록된 계좌가 없습니다.</div>`;
+            } else {
+                abox.innerHTML = accounts.map((a, i) => `
+                    <div class="account-box bg-color-${i%6}" onclick="openAccountModal('${a.name}')">
+                        <span class="account-name">${a.name}</span>
+                        <span class="account-val">${accT[a.name].toLocaleString()}</span>
+                    </div>
+                `).join('');
+            }
+
+            const cgrid = document.getElementById('calendarGrid');
+            let cHtml = '';
+            for(let i=1; i<=12; i++) {
+                const ms = `${currentYear}-${String(i).padStart(2,'0')}`;
+                const amt = mT[ms] || 0;
+                cHtml += `
+                    <div class="calendar-cell ${amt===0?'empty':''}" onclick="openModal('${ms}')">
+                        <div class="calendar-cell-row">
+                            <div class="month-label-group">
+                                <span class="month-icon">${monthIcons[i]}</span>
+                                <span class="month-label">${i}월</span>
+                            </div>
+                            <span class="month-amount">${amt===0?'-':amt.toLocaleString()}</span>
+                        </div>
+                    </div>`;
+            }
+            cgrid.innerHTML = cHtml;
+            updateTrashBadge();
+        }
+
+        function changeYear(v) { currentYear = v; updateUI(); }
+        
+        function openYearManageModal() { 
+            document.getElementById('yearManageList').innerHTML = availableYears.map(y => `
+                <div class="detail-item">
+                    <b>${y}년</b> 
+                    <button class="delete-btn" onclick="deleteYear('${y}')">✕</button>
+                </div>`).join('');
+            openModalWindow('yearManageModal'); 
+        }
+        function addNewYearAction() {
+            const y = document.getElementById('newYearInput').value.trim();
+            if(!y || !/^\d{4}$/.test(y)) return showAlert('4자리 연도를 입력하세요.');
+            if(availableYears.includes(y)) return showAlert('이미 존재합니다.');
+            availableYears.push(y); 
+            document.getElementById('newYearInput').value=''; 
+            saveToLocalStorage(); 
+            openYearManageModal(); 
+            updateUI();
+        }
+        function deleteYear(y) {
+            if(availableYears.length<=1) return showAlert('최소 1개의 연도는 필요합니다.');
+            showConfirm(`${y}년 데이터를 삭제하시겠습니까?`, r => {
+                if(r) { 
+                    records = records.filter(i=>i.date.substring(0,4)!==y); 
+                    availableYears = availableYears.filter(a=>a!==y); 
+                    if(currentYear===y) currentYear=availableYears[0]; 
+                    saveToLocalStorage(); 
+                    openYearManageModal(); 
+                    updateUI(); 
+                }
+            });
+        }
+
+        function openAccountManageModal() {
+            renderAccountManageList();
+            openModalWindow('accountManageModal');
+        }
+
+        function renderAccountManageList() {
+            const listContainer = document.getElementById('accountManageList');
+            listContainer.innerHTML = accounts.map(a => {
+                const isEditing = (editingAccountName === a.name);
+                if (isEditing) {
+                    return `
+                        <div class="detail-item" style="border:1px solid var(--accent-color);">
+                            <div style="flex:1; margin-right:6px;">
+                                <input type="text" id="editAccountInput_${encodeURIComponent(a.name)}" class="slim-input" value="${a.name}">
+                            </div>
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                <button class="save-btn-mini" style="height:30px; padding:0 10px;" onclick="saveAccountEdit('${a.name}')">저장</button>
+                                <button class="btn-header-action" onclick="cancelAccountEdit()">취소</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="detail-item">
+                            <b>${a.name}</b> 
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <button class="edit-btn" onclick="startAccountEdit('${a.name}')">✏️</button>
+                                <button class="delete-btn" onclick="deleteAccount('${a.name}')">✕</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function startAccountEdit(name) {
+            editingAccountName = name;
+            renderAccountManageList();
+        }
+
+        function cancelAccountEdit() {
+            editingAccountName = null;
+            renderAccountManageList();
+        }
+
+        function saveAccountEdit(oldName) {
+            const inputEl = document.getElementById(`editAccountInput_${encodeURIComponent(oldName)}`);
+            const newName = inputEl ? inputEl.value.trim() : '';
+
+            if(!newName) return showAlert('변경할 계좌명을 입력하세요.');
+            if(newName !== oldName && accounts.some(a => a.name === newName)) {
+                return showAlert('이미 존재하는 계좌명입니다.');
+            }
+
+            const targetAcc = accounts.find(a => a.name === oldName);
+            if(targetAcc) {
+                targetAcc.name = newName;
+            }
+
+            records.forEach(r => {
+                if(r.account === oldName) {
+                    r.account = newName;
+                }
+            });
+
+            trashRecords.forEach(t => {
+                if(t.account === oldName) {
+                    t.account = newName;
+                }
+            });
+
+            editingAccountName = null;
+            saveToLocalStorage();
+            renderAccountManageList();
+            updateUI();
+        }
+
+        function addNewAccount() {
+            const n = document.getElementById('newAccountInput').value.trim();
+            if(!n) return showAlert('계좌명을 입력하세요.');
+            if(accounts.some(a=>a.name===n)) return showAlert('존재하는 계좌입니다.');
+            accounts.push({name:n}); 
+            document.getElementById('newAccountInput').value=''; 
+            saveToLocalStorage(); 
+            openAccountManageModal(); 
+            updateUI();
+        }
+        function deleteAccount(n) {
+            showConfirm(`'${n}' 계좌를 삭제하시겠습니까?`, r => {
+                if(r) { 
+                    accounts=accounts.filter(a=>a.name!==n); 
+                    records=records.filter(r=>r.account!==n); 
+                    saveToLocalStorage(); 
+                    openAccountManageModal(); 
+                    updateUI(); 
+                }
+            });
+        }
+
+        function addRecord() {
+            const a = document.getElementById('accountSelect').value;
+            const s = document.getElementById('stockInput').value.trim();
+            const d = document.getElementById('receiveDate').value;
+            const m = Number(document.getElementById('receiveAmount').value);
+            
+            if(!a || !s || !d || !m) return showAlert('모든 항목을 입력해 주세요.');
+            
+            records.push({
+                id: Date.now(), 
+                account: a, 
+                stock: s, 
+                date: d, 
+                month: d.substring(0, 7), 
+                amount: m
+            });
+            
+            const recYear = d.substring(0, 4);
+            if(!availableYears.includes(recYear)) availableYears.push(recYear);
+            
+            document.getElementById('stockInput').value = '';
+            document.getElementById('receiveAmount').value = '';
+            saveToLocalStorage(); 
+            updateUI();
+        }
+
+        let currentModalContext = { type: '', value: '' };
+
+        function openModal(m) {
+            currentModalContext = { type: 'month', value: m };
+            document.getElementById('modalTitle').innerText = `${m} 내역`;
+            const filtered = records.filter(i => i.month === m).sort((a,b) => new Date(b.date) - new Date(a.date));
+            renderDetailList(filtered, false);
+            openModalWindow('detailModal');
+        }
+
+        function openAccountModal(acc) {
+            currentModalContext = { type: 'account', value: acc };
+            document.getElementById('modalTitle').innerText = acc === '전체' ? `${currentYear}년 전체 내역` : `${currentYear}년 ${acc} 내역`;
+            const filtered = records.filter(i => i.date.substring(0,4) === currentYear && (acc === '전체' || i.account === acc))
+                                    .sort((a,b) => new Date(b.date) - new Date(a.date));
+            renderDetailList(filtered, true);
+            openModalWindow('detailModal');
+        }
+
+        function renderDetailList(data, groupByMonth) {
+            const bd = document.getElementById('modalBody');
+            if (!data || data.length === 0) {
+                bd.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">등록된 내역이 없습니다.</div>';
+                return;
+            }
+
+            let html = '';
+            if (groupByMonth) {
+                const groups = {};
+                data.forEach(item => {
+                    const mKey = item.month;
+                    if (!groups[mKey]) groups[mKey] = [];
+                    groups[mKey].push(item);
+                });
+
+                Object.keys(groups).sort().reverse().forEach(mKey => {
+                    const monthTotal = groups[mKey].reduce((sum, item) => sum + item.amount, 0);
+                    html += `<div class="month-group-header">📅 ${mKey} (합계: ${monthTotal.toLocaleString()}원)</div>`;
+                    groups[mKey].forEach(item => { html += createItemRowHtml(item); });
+                });
+            } else {
+                data.forEach(item => { html += createItemRowHtml(item); });
+            }
+            bd.innerHTML = html;
+        }
+
+        function createItemRowHtml(i) {
+            const isEditing = (editingRecordId === i.id);
+            
+            // 수정 요청 반영: "YYYY-MM-DD" 형식을 "MM.DD" 형태로 변환 (예: 2026-09-02 -> 09.02)
+            let displayDate = i.date;
+            if (i.date && i.date.length >= 10) {
+                const parts = i.date.split('-');
+                if (parts.length === 3) {
+                    displayDate = `${parts[1]}.${parts[2]}`;
+                }
+            }
+
+            if (isEditing) {
+                return `
+                    <div class="detail-item" style="border:1px solid var(--accent-color); flex-direction:column; align-items:flex-start;">
+                        <div style="font-size:0.75rem; font-weight:bold; color:var(--accent-color);">내역 수정 [${i.account}]</div>
+                        <div class="edit-row" style="width:100%;"><input type="text" id="editStock_${i.id}" class="slim-input" value="${i.stock}"></div>
+                        <div class="edit-row" style="width:100%;">
+                            <input type="date" id="editDate_${i.id}" class="slim-input" value="${i.date}">
+                            <input type="number" id="editAmount_${i.id}" class="slim-input" value="${i.amount}">
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px; width:100%;">
+                            <button class="save-btn-mini" style="height:30px; padding:0 10px;" onclick="saveRecordEdit(${i.id})">저장</button>
+                            <button class="btn-header-action" onclick="cancelRecordEdit()">취소</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="detail-item" style="align-items: flex-start;">
+                        <div class="detail-item-main">
+                            <div style="width: 100%; margin-bottom: 4px;">
+                                <b style="color: var(--text-main); font-size: 0.9rem; word-break: break-all; display: block; line-height: 1.2;">${i.stock}</b>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="font-size: 0.72rem; color: var(--text-sub); display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                                    <!-- 수정된 월.일 표시 형식 적용 -->
+                                    <span>${displayDate}</span>
+                                    <span style="background: var(--btn-action-bg); border: var(--btn-action-border); padding: 1px 6px; border-radius: 6px; font-weight: 700; color: var(--accent-color);">${i.account}</span>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                                    <span style="color: var(--accent-color); font-weight: bold; font-size: 0.85rem;">${i.amount.toLocaleString()} 원</span>
+                                    <button class="edit-btn" onclick="startRecordEdit(${i.id})">✏️</button>
+                                    <button class="delete-btn" onclick="deleteRecord(${i.id})">✕</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function startRecordEdit(id) { editingRecordId = id; refreshCurrentDetailModal(); }
+        function cancelRecordEdit() { editingRecordId = null; refreshCurrentDetailModal(); }
+
+        function saveRecordEdit(id) {
+            const stockVal = document.getElementById(`editStock_${id}`).value.trim();
+            const dateVal = document.getElementById(`editDate_${id}`).value;
+            const amountVal = Number(document.getElementById(`editAmount_${id}`).value);
+
+            if (!stockVal || !dateVal || !amountVal) return showAlert('수정할 항목을 올바르게 입력해 주세요.');
+
+            const target = records.find(r => r.id === id);
+            if (target) {
+                target.stock = stockVal;
+                target.date = dateVal;
+                target.month = dateVal.substring(0, 7);
+                target.amount = amountVal;
+
+                const recYear = dateVal.substring(0, 4);
+                if (!availableYears.includes(recYear)) availableYears.push(recYear);
+
+                saveToLocalStorage();
+                editingRecordId = null;
+                updateUI();
+                refreshCurrentDetailModal();
+            }
+        }
+
+        function refreshCurrentDetailModal() {
+            if (currentModalContext.type === 'month') openModal(currentModalContext.value);
+            else if (currentModalContext.type === 'account') openAccountModal(currentModalContext.value);
+        }
+
+        function deleteRecord(id) {
+            showConfirm('삭제하시겠습니까?\n휴지통으로 이동됩니다.', r => {
+                if(r) { 
+                    const t = records.find(x => x.id === id); 
+                    if(t) { 
+                        records = records.filter(x => x.id !== id); 
+                        trashRecords.push(t); 
+                        saveToLocalStorage(); 
+                        updateUI(); 
+                        refreshCurrentDetailModal();
+                    } 
+                }
+            });
+        }
+
+        function openTrashModal() {
+            const bd = document.getElementById('trashModalBody');
+            if(!trashRecords.length) { 
+                bd.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">휴지통이 비어 있습니다.</div>'; 
+            } else {
+                bd.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <button class="btn-header-action" onclick="restoreAllTrash()">전체 복구</button>
+                        <button class="btn-header-action" style="background:#ef4444;" onclick="emptyTrash()">완전 삭제</button>
+                    </div>` + trashRecords.map(i=>`
+                    <div class="detail-item">
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem; color:var(--text-sub);">${i.date} [${i.account}]</div>
+                            <b>${i.stock}</b> - ${i.amount.toLocaleString()}원
+                        </div>
+                        <button class="btn-header-action" style="padding:4px 8px; font-size:0.7rem;" onclick="restoreTrash(${i.id})">복구</button>
+                    </div>`).join('');
+            }
+            openModalWindow('trashModal');
+        }
+
+        function restoreTrash(id) {
+            const t = trashRecords.find(x => x.id === id); 
+            if(t) { 
+                trashRecords = trashRecords.filter(x => x.id !== id); 
+                records.push(t); 
+                saveToLocalStorage(); 
+                updateUI(); 
+                openTrashModal(); 
+            }
+        }
+        function restoreAllTrash() { 
+            records = records.concat(trashRecords); 
+            trashRecords = []; 
+            saveToLocalStorage(); 
+            updateUI(); 
+            openTrashModal(); 
+        }
+        function emptyTrash() { 
+            showConfirm('휴지통을 완전히 비우시겠습니까?', r => { 
+                if(r) { trashRecords = []; saveToLocalStorage(); openTrashModal(); }
+            }); 
+        }
+
+        function resetAllData() {
+            showConfirm("⚠️ 모든 데이터(계좌, 배당 내역)를 완전히 초기화하시겠습니까?", r => {
+                if(r) { 
+                    localStorage.clear(); 
+                    records = []; accounts = []; trashRecords = []; 
+                    availableYears = [new Date().getFullYear().toString()]; 
+                    currentYear = availableYears[0]; 
+                    saveToLocalStorage(); 
+                    updateUI(); 
+                    closeModalWindow('settingsModal'); 
+                    showAlert("초기화가 완료되었습니다."); 
+                }
+            });
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({records, accounts, trashRecords, availableYears}));
+            const downloadAnchor = document.createElement('a'); 
+            downloadAnchor.href = dataStr; 
+            downloadAnchor.download = `dividend_backup_${new Date().toISOString().substring(0,10)}.json`;
+            document.body.appendChild(downloadAnchor); 
+            downloadAnchor.click(); 
+            downloadAnchor.remove();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0]; 
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try { 
+                    const parsed = JSON.parse(ev.target.result); 
+                    records = parsed.records || []; 
+                    accounts = (parsed.accounts || []).map(item => typeof item === 'string' ? { name: item } : item); 
+                    trashRecords = parsed.trashRecords || []; 
+                    availableYears = parsed.availableYears || [currentYear]; 
+                    saveToLocalStorage(); 
+                    updateUI(); 
+                    closeModalWindow('settingsModal'); 
+                    showAlert('복구가 완료되었습니다.'); 
+                } catch(err) { 
+                    showAlert('올바르지 않은 백업 파일 형식입니다.'); 
+                }
+            }; 
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
